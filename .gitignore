@@ -1,0 +1,6 @@
+.idea/
+*.iml
+pkg/
+vendor/
+.env.*.local
+.env.local
