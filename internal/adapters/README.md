@@ -1,0 +1,1 @@
+Contains various adapters for this service. Adapters can range from DB/Cache interfaces to 3rd party APIs. Adapters should avoid business logic as much as possible -- business logic should go to usecases.

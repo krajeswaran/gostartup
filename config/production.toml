@@ -1,0 +1,4 @@
+# settings for production except sensitive secrets
+
+[gostartup]
+reset_stats_on_api_count = 5000

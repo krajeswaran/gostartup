@@ -1,0 +1,38 @@
+version: '3'
+
+volumes:
+  local_postgres_data: {}
+  local_postgres_data_backups: {}
+
+services:
+  maze:
+    build:
+      context: ../maze
+      dockerfile: ../maze/Dockerfile
+    image: maze
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "5000:5000"
+    environment:
+      - MAZE_POSTGRES_DB_HOST=db
+      - MAZE_REDIS_HOST_SERVER=redis:6379
+    volumes:
+      - ../maze:/go/src/maze
+
+  db:
+    image: postgres:10.4-alpine
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - local_postgres_data:/var/lib/postgresql/data
+      - local_postgres_data_backups:/backups
+
+  redis:
+    image: redis:4.0.10-alpine
+    ports:
+      - "6379:6379"
+
+

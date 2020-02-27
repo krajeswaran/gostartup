@@ -1,0 +1,6 @@
+# base config: common config across envs
+
+# General
+[gostartup]
+reset_stats_on_api_count = 100
+

@@ -1,0 +1,1 @@
+Contains model definitions: core business entities. Note: For simplicity's sake these don't have to be pure `struct`, they can contain DB/Cache definitions as well.

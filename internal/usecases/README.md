@@ -1,0 +1,1 @@
+Contains usecases: fairly portable + testable business logic. Here 'Portable' means usecases can remain the same/change only slightly even if we change our DB/cache(Postgres to Mongo) or even change our rest API framework(echo to net/http router)

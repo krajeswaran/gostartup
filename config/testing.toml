@@ -1,0 +1,5 @@
+# settings for development except sensitive secrets
+
+[gostartup]
+debug = 1
+reset_stats_on_api_count = 1

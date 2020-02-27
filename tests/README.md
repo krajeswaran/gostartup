@@ -1,0 +1,1 @@
+Contains E2E tests, test data etc. Note: unit tests are in corresponding packages
