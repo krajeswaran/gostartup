@@ -1,5 +1,9 @@
 # settings for development except sensitive secrets
 
-[gostartup]
-debug = 1
+[general]
+debug = true
+jwt_validity_period = 2400 # in hours
+enable_cors = true
+
+[stats]
 reset_stats_on_api_count = 5

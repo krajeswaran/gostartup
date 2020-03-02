@@ -2,11 +2,9 @@ package adapters
 
 import (
 	"errors"
+	"github.com/go-redis/redis/v7"
 	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/viper"
-	"os"
-
-	"github.com/go-redis/redis/v7"
 )
 
 //CacheAdapter Struct to logically bind all the cache related functions
@@ -14,9 +12,9 @@ type CacheAdapter struct{}
 
 const (
 	// StatCachePrefix Key prefix for stat related entries
-	StatCachePrefix          = "s:"
+	StatCachePrefix = "s:"
 	//StatCacheHelloApiKey Key name for hello api stats
-	StatCacheHelloApiKey     = "hello_api"
+	StatCacheHelloApiKey = "hello_api"
 	//StatCacheApiFailureCount Key name for counting API failures
 	StatCacheApiFailureCount = "api_fail_count"
 	//StatCacheApiTotalCount Key name for counting total API calls
@@ -24,29 +22,33 @@ const (
 )
 
 //CacheInit initializes redis from env variables
-func (c *CacheAdapter) CacheInit() (*redis.Cmdable, error) {
+func (c *CacheAdapter) CacheInit() *redis.Cmdable {
 	var cache redis.Cmdable
 	if viper.GetBool("USE_REDIS_CLUSTER") {
-		var cfg redis.ClusterOptions
-		if err:= viper.Unmarshal(&cfg); err != nil {
-			return nil, multierror.Append(err, errors.New("unable to marshal redis config"))
+		cfg := redis.ClusterOptions{
+			Addrs:        viper.GetStringSlice("cache_cluster_addresses"),
+			Password:     viper.GetString("cache_password"),
+			DialTimeout:  viper.GetDuration("cache_dial_timeout"),
+			ReadTimeout:  viper.GetDuration("cache_read_timeout"),
+			WriteTimeout: viper.GetDuration("cache_write_timeout"),
+			PoolSize:     viper.GetInt("cache_pool_size"),
 		}
 
 		cache = redis.NewClusterClient(&cfg)
 	} else {
-		var cfg redis.Options
-		if err:= viper.Unmarshal(&cfg); err != nil {
-			return nil, multierror.Append(err, errors.New("unable to marshal redis config"))
+		cfg := redis.Options{
+			Addr:         viper.GetString("cache_address"),
+			Password:     viper.GetString("cache_password"),
+			DialTimeout:  viper.GetDuration("cache_dial_timeout"),
+			ReadTimeout:  viper.GetDuration("cache_read_timeout"),
+			WriteTimeout: viper.GetDuration("cache_write_timeout"),
+			PoolSize:     viper.GetInt("cache_pool_size"),
 		}
 
 		cache = redis.NewClient(&cfg)
 	}
 
-	if cache == nil {
-		return nil, errors.New("redis host: " + os.Getenv("redis.host_server") + " Can't connect to redis")
-	}
-
-	return &cache, nil
+	return &cache
 }
 
 //DeepStatus checks health of redis
@@ -90,10 +92,9 @@ func (c *CacheAdapter) UpdateApiStats(didApiFail bool) (int64, error) {
 
 //ResetApiStats Resets API stat counters
 func (c *CacheAdapter) ResetApiStats() error {
-	_, err := cache.Del(StatCachePrefix+StatCacheHelloApiKey).Result()
+	_, err := cache.Del(StatCachePrefix + StatCacheHelloApiKey).Result()
 	if err != nil {
 		return err
 	}
 	return nil
 }
-

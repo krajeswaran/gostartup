@@ -1,4 +1,8 @@
 # settings for production except sensitive secrets
 
-[gostartup]
+[general]
+jwt_validity_period = 24 # in hours
+enable_cors = false
+
+[stats]
 reset_stats_on_api_count = 5000

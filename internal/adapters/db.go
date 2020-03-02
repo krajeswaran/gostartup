@@ -2,10 +2,9 @@ package adapters
 
 import (
 	"errors"
-	"fmt"
-	"github.com/jmoiron/sqlx"
+	"github.com/go-pg/pg/v9"
+	"github.com/hashicorp/go-multierror"
 	"github.com/krajeswaran/gostartup/internal/models"
-	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 )
 
@@ -13,79 +12,57 @@ import (
 type DBAdapter struct{}
 
 //DBInit initializes DB connection
-func (d *DBAdapter) DBInit() (*sqlx.DB, error) {
+func (d *DBAdapter) DBInit() *pg.DB {
 	// create postgres connection
-	connectionString := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=%s password=%s sslrootcert=%s connect_timeout=%s",
-		viper.GetString("DB_HOST"), viper.GetString("DB_PORT"),
-		viper.GetString("DB_USER"), viper.GetString("DB_NAME"),
-		viper.GetString("DB_SSL_MODE"), viper.GetString("DB_PASSWORD"),
-		viper.GetString("DB_SSL_CERT"), viper.GetString("DB_CONNECT_TIMEOUT"))
+	db := pg.Connect(&pg.Options{
+		Addr:            viper.GetString("DB_ADDR"),
+		User:            viper.GetString("DB_USER"),
+		Password:        viper.GetString("DB_PASSWORD"),
+		Database:        viper.GetString("DB_NAME"),
+		ApplicationName: viper.GetString("DB_APPLICATION_NAME"),
+		DialTimeout:     viper.GetDuration("DB_DIAL_TIMEOUT"),
+		ReadTimeout:     viper.GetDuration("DB_READ_TIMEOUT"),
+		PoolSize:        viper.GetInt("DB_CONN_POOL_SIZE"),
+		PoolTimeout:     viper.GetDuration("DB_CONN_POOL_TIMEOUT"),
+	})
 
-	// throws error if application_name is empty
-	appName := viper.GetString("DB_APPLICATION_NAME")
-	if appName != "" {
-		connectionString = connectionString + fmt.Sprintf(" application_name=%s", appName)
-	}
-
-	db, err := sqlx.Open("postgres", connectionString)
-	if err != nil {
-		return nil, err
-	}
-
-	// DB parameters
-	db.SetConnMaxLifetime(viper.GetDuration("DB_CONNECTION_LIFETIME"))
-	db.SetMaxOpenConns(viper.GetInt("DB_MAX_OPEN_CONNECTIONS"))
-	if viper.GetInt("DB_MAX_IDLE_CONNECTIONS") > 0 {
-		db.SetMaxIdleConns(viper.GetInt("DB_MAX_IDLE_CONNECTIONS"))
-	}
-
-	return db, nil
+	return db
 }
 
 //DeepStatus checks for a DB connection
 func (d *DBAdapter) DeepStatus() error {
-	if err := db.Ping(); err != nil {
-		return errors.New("SERVICE_DB_DOWN")
+	var n int
+	_, err := db.QueryOne(pg.Scan(&n), "SELECT 1")
+	if err != nil {
+		return multierror.Append(err, errors.New("SERVICE_DB_DOWN"))
 	}
 	return nil
 }
 
 //FetchUser Fetches a user based on id
 func (d *DBAdapter) FetchUser(id string) (*models.User, error) {
-	var user models.User
-	if err := db.Get(&user, "SELECT * FROM user WHERE id=?", id); err != nil {
+	user := new(models.User)
+	if err := db.Model(user).Where("id = ?", id).Select(); err != nil {
 		return nil, err
 	}
 
-	return &user, nil
+	return user, nil
 }
 
 //CreateUser Creates user given a user name
 func (d *DBAdapter) CreateUser(name string) (*models.User, error) {
-	row, err := db.Queryx("INSERT INTO user (name) VALUES (?)", name)
+	user := &models.User{
+		Name: name,
+	}
+	_, err := db.Model(user).
+		Column("id").
+		Where("name=?name").
+		OnConflict("DO NOTHING").
+		Returning("id").
+		SelectOrInsert()
 	if err != nil {
 		return nil, err
 	}
-	var user models.User
-	if err = row.StructScan(&user); err != nil {
-		return nil, err
-	}
 
-	return &user, nil
-}
-
-//InitSchema Initializes schema for app start
-func (d *DBAdapter) InitSchema() error {
-	schema := `DROP TABLE IF EXISTS public.user; CREATE TABLE public.user (
-    created_at timestamp with time zone DEFAULT timezone('UTC'::text, now()) NOT NULL,
-    modified_at timestamp with time zone DEFAULT timezone('UTC'::text, now()) NOT NULL,
-    id serial NOT NULL,
-	name text NOT NULL
-    );`
-
-	if _, err := db.Exec(schema); err != nil {
-		return err
-	}
-
-	return nil
+	return user, nil
 }

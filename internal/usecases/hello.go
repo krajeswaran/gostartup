@@ -24,7 +24,7 @@ func (h *HelloRepo) FetchUserName(userId string) (string, error) {
 	user, err := DBInstance.FetchUser(userId)
 	if err != nil {
 		log.Err(h.updateApiStats(true)).Msg("updating API stats")
-		return "", multierror.Append(err, errors.New("failed to fetch user for id: " + userId))
+		return "", multierror.Append(err, errors.New("failed to fetch user for id: "+userId))
 	}
 
 	log.Err(h.updateApiStats(false)).Msg("updating API stats")
@@ -38,7 +38,7 @@ func (h *HelloRepo) updateApiStats(didApiFail bool) error {
 	}
 
 	// after a certain api hits reset stats counter
-	if count >= viper.GetInt64("reset_stats_on_api_count") {
+	if count >= viper.GetInt64("stats.reset_stats_on_api_count") {
 		log.Err(CacheInstance.ResetApiStats()).Msg("resetting API stats")
 	}
 
@@ -48,7 +48,7 @@ func (h *HelloRepo) updateApiStats(didApiFail bool) error {
 //GetApiStats Fetches API stats from cache
 func (h *HelloRepo) GetApiStats() (*models.Stat, error) {
 	statsRaw, err := CacheInstance.GetApiStats()
-	if  err != nil {
+	if err != nil {
 		return nil, multierror.Append(err, errors.New("failed to fetch API stats from cache"))
 	}
 
@@ -63,4 +63,14 @@ func (h *HelloRepo) GetApiStats() (*models.Stat, error) {
 	}
 
 	return &stat, nil
+}
+
+//CreateUser Creates a user in DB
+func (h *HelloRepo) CreateUser(name string) (*models.User, error) {
+	user, err := DBInstance.CreateUser(name)
+	if err != nil {
+		return nil, multierror.Append(err, errors.New("failed to create user in DB"))
+	}
+
+	return user, nil
 }

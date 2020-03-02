@@ -1,38 +1,3 @@
-  - no cookiecutter, use git-branches instead: coz history is important
-  - go standards: https://github.com/golang-standards/project-layout
-    - config
-      - env files for secrets
-  - overloaded(base, develop etc) toml config for application configuration
-      - live reload app config: viper?
-- rest
-  - jwt
-  - cors
-  - hystrix
-  - deep monitor?
-- tests
-  - bdd/table-driven: ginkgo
-  - mock: testify
-  - faker
-
-create jwt token via cli: inserts row in table, puts jwt.userid
-verity jwt(reads from jwt.userid, returns user name for hello+<>)
-
----
-- user:account(flask)
-  - login(post, delete logout)
-  - signup(post)
-  - recovery(password reset form + email link)
-  - emails
-  - auth/session validation
-  - rbac
-- cli
-  - better opt parser: cobra
-- clean arch
-- api doc
-  - payments: capture, charge, txn history, manage fi, balance??
-  - webhook(+jobq) for recording transaction
-  - notification for upstream services(callback url + backoff mechanism)
-  - cache? : redlock for charge id lock,, balance
 # Go Start [![Circle CI](https://gitlab.com/westworld-ho/gostartup/badges/master/pipeline.svg)][![godoc]()][![code coverage]()]
 
 gostartup is my go-to starter project base for a golang project.
@@ -133,3 +98,25 @@ https://gomonorepo.org/
 
 ## TODO
 
+rest
+  - swagger
+  - hystrix
+  - monitor: prometheus/statsd
+tests
+  - bdd/table-driven: ginkgo
+  - mock: testify
+  - faker
+
+---
+- user:account(flask)
+  - login(post, delete logout)
+  - signup(post)
+  - recovery(password reset form + email link)
+  - emails
+  - auth/session validation
+  - rbac
+- api doc
+  - payments: capture, charge, txn history, manage fi, balance??
+  - webhook(+jobq) for recording transaction
+  - notification for upstream services(callback url + backoff mechanism)
+  - cache? : redlock for charge id lock,, balance

@@ -15,26 +15,35 @@ import (
 
 func apiRoutes() *echo.Echo {
 	router := echo.New()
+
+	// some default routing preferences
+	router.Pre(middleware.AddTrailingSlash())
+	router.Use(middleware.BodyLimit("5M"))
+	router.Use(middleware.Secure())
 	router.Use(middleware.Logger())
 	router.Use(middleware.Recover())
+	router.Use(middleware.Gzip())
+	router.Use(middleware.CSRF())
+	if viper.GetBool("general.enable_cors") {
+		router.Use(middleware.CORS())
+	}
 
 	// common
 	commonController := new(controllers.CommonController)
 	// swagger:route
 	router.GET("/status/", commonController.Status)
 	// swagger:route
-	router.GET("/status/full", commonController.DeepStatus)
+	router.GET("/status/full/", commonController.DeepStatus)
 
 	// hello service
-	helloSvcGrp := router.Group("/api")
-	helloServiceV1 := helloSvcGrp.Group("/v1")
-	helloServiceV1.Group("/hello", middleware.JWTWithConfig(
+	apiV1 := router.Group("/api/v1")
+	helloGrp := apiV1.Group("/hello", middleware.JWTWithConfig(
 		middleware.JWTConfig{
 			SigningKey: []byte(viper.GetString("secret_key")),
 		}))
 	helloController := new(controllers.HelloController)
-	helloServiceV1.GET("/", helloController.SayHello)
-	helloServiceV1.GET("/stats", helloController.GetStats)
+	helloGrp.GET("/", helloController.SayHello)
+	helloGrp.GET("/stats/", helloController.GetStats)
 
 	return router
 }
@@ -44,9 +53,10 @@ func Init() {
 	r := apiRoutes()
 	go func() {
 		log.Info().Msg("Initializing Api servers")
-		if err := r.Start(os.Getenv("GOSTARTUP_API_SERVER_PORT")); err != nil {
+		if err := r.Start(viper.GetString("API_ADDRESS")); err != nil {
 			log.Fatal().Err(err).Msg("Unable to bring api servers up")
 		}
+
 	}()
 
 	// Wait for interrupt signal to gracefully shutdown the servers

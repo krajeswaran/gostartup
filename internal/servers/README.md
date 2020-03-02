@@ -1,1 +1,1 @@
-Contains server and route definitions. Note: Many controllers can be combined to one server
+Contains servers and route definitions. Contains actual instantiation for gRPC/REST services
