@@ -7,8 +7,18 @@ import (
 	"github.com/spf13/viper"
 )
 
+//CacheInterface interface for Cache adapter
+type CacheInterface interface {
+	DeepStatus() error
+	GetApiStats() ([]string, error)
+	UpdateApiStats(didApiFail bool) (int64, error)
+	ResetApiStats() error
+}
+
 //CacheAdapter Struct to logically bind all the cache related functions
-type CacheAdapter struct{}
+type CacheAdapter struct{
+	cache redis.Cmdable
+}
 
 const (
 	// StatCachePrefix Key prefix for stat related entries
@@ -21,9 +31,9 @@ const (
 	StatCacheApiTotalCount = "api_total_count"
 )
 
-//CacheInit initializes redis from env variables
-func (c *CacheAdapter) CacheInit() *redis.Cmdable {
-	var cache redis.Cmdable
+//CacheInit initializes redis from config
+func CacheInit() *CacheAdapter {
+	c := &CacheAdapter{cache:nil}
 	if viper.GetBool("USE_REDIS_CLUSTER") {
 		cfg := redis.ClusterOptions{
 			Addrs:        viper.GetStringSlice("cache_cluster_addresses"),
@@ -34,7 +44,7 @@ func (c *CacheAdapter) CacheInit() *redis.Cmdable {
 			PoolSize:     viper.GetInt("cache_pool_size"),
 		}
 
-		cache = redis.NewClusterClient(&cfg)
+		c.cache = redis.NewClusterClient(&cfg)
 	} else {
 		cfg := redis.Options{
 			Addr:         viper.GetString("cache_address"),
@@ -45,15 +55,15 @@ func (c *CacheAdapter) CacheInit() *redis.Cmdable {
 			PoolSize:     viper.GetInt("cache_pool_size"),
 		}
 
-		cache = redis.NewClient(&cfg)
+		c.cache = redis.NewClient(&cfg)
 	}
 
-	return &cache
+	return c
 }
 
 //DeepStatus checks health of redis
 func (c *CacheAdapter) DeepStatus() error {
-	if err := cache.Ping().Err(); err != nil {
+	if err := c.cache.Ping().Err(); err != nil {
 		return multierror.Append(err, errors.New("CACHE_REDIS_DOWN"))
 	}
 	return nil
@@ -61,7 +71,7 @@ func (c *CacheAdapter) DeepStatus() error {
 
 //GetApiStats Retrieves API stats for hello service
 func (c *CacheAdapter) GetApiStats() ([]string, error) {
-	raw, err := cache.HMGet(StatCachePrefix+StatCacheHelloApiKey, StatCacheApiTotalCount, StatCacheApiFailureCount).Result()
+	raw, err := c.cache.HMGet(StatCachePrefix+StatCacheHelloApiKey, StatCacheApiTotalCount, StatCacheApiFailureCount).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -75,13 +85,13 @@ func (c *CacheAdapter) GetApiStats() ([]string, error) {
 
 //UpdateApiStats Updates API stats in redis
 func (c *CacheAdapter) UpdateApiStats(didApiFail bool) (int64, error) {
-	count, err := cache.HIncrBy(StatCachePrefix+StatCacheHelloApiKey, StatCacheApiTotalCount, 1).Result()
+	count, err := c.cache.HIncrBy(StatCachePrefix+StatCacheHelloApiKey, StatCacheApiTotalCount, 1).Result()
 	if err != nil {
 		return 0, err
 	}
 
 	if didApiFail {
-		_, err := cache.HIncrBy(StatCachePrefix+StatCacheHelloApiKey, StatCacheApiFailureCount, 1).Result()
+		_, err := c.cache.HIncrBy(StatCachePrefix+StatCacheHelloApiKey, StatCacheApiFailureCount, 1).Result()
 		if err != nil {
 			return count, err
 		}
@@ -92,7 +102,7 @@ func (c *CacheAdapter) UpdateApiStats(didApiFail bool) (int64, error) {
 
 //ResetApiStats Resets API stat counters
 func (c *CacheAdapter) ResetApiStats() error {
-	_, err := cache.Del(StatCachePrefix + StatCacheHelloApiKey).Result()
+	_, err := c.cache.Del(StatCachePrefix + StatCacheHelloApiKey).Result()
 	if err != nil {
 		return err
 	}

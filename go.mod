@@ -12,4 +12,5 @@ require (
 	github.com/rs/zerolog v1.18.0
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.2
+	gopkg.in/eapache/go-resiliency.v1 v1.2.0
 )

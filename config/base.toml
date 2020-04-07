@@ -6,4 +6,8 @@ jwt_validity_period = 168 # in hours
 enable_cors = false
 
 [stats]
+ff_enable_stats = true
 reset_stats_on_api_count = 100
+error_threshold = 3
+success_threshold = 2
+cache_timeout = "2s"

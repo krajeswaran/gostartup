@@ -4,43 +4,12 @@ import (
 	"gostartup/src/adapters"
 	"gostartup/src/config"
 	"gostartup/src/models"
+	"reflect"
 	"strconv"
 	"testing"
 )
 
 var accountUsecase *SmsUsecase
-
-func createDummyAccountByAuthID(authID string, accountID int) {
-	cache := adapters.Cache()
-	cache.Set(authID, accountID, 0).Result()
-}
-
-func createDummyAccount(accountID int, authID string) {
-	account := map[string]interface{}{
-		"id":         accountID,
-		"name":       "sample name",
-		"auth_id":    authID,
-		"auth_token": "MDA3ZGEyZDJiMzFjY2NjNjYwZTNlY2JmYzkwNGFl",
-		"enabled":    true,
-		"country_id": "US",
-	}
-	createDummyAccountByAuthID(authID, accountID)
-	cacheAdapter.SetAccount(accountID, models.AccountPrefix, account)
-}
-
-func createDummySubAccount(subAccountID int, authID string) {
-	subAccount := map[string]interface{}{
-		"id":          subAccountID,
-		"account_id":  123,
-		"name":        "sample sub account",
-		"auth_id":     authID,
-		"auth_token":  "FDSFDSGFNJSDKFHJSDHFGJSDF",
-		"mps_allowed": 5,
-		"enabled":     true,
-	}
-	createDummyAccountByAuthID(authID, subAccountID)
-	cacheAdapter.SetAccount(subAccountID, models.SubAccountPrefix, subAccount)
-}
 
 func setup() {
 	config.Init()
@@ -52,258 +21,100 @@ func tearDown() {
 	c.FlushDB()
 }
 
-func TestAccountUsecase_GetAccountByAuthID(t *testing.T) {
-	setup()
-
-	accountID := 123
-	authID := "MANGY5OWI0OWI0ODC2OW"
-	createDummyAccount(accountID, authID)
-
-	account, err := accountUsecase.GetAccountByAuthID(authID)
-	if err != nil {
-		t.Error(err.Error())
+func TestHelloRepo_CreateUser(t *testing.T) {
+	type args struct {
+		name string
 	}
-
-	if len(account) == 0 {
-		t.Error("Failed: account object should not be empty")
+	tests := []struct {
+		name    string
+		args    args
+		want    *models.User
+		wantErr bool
+	}{
+		// TODO: Add test cases.
 	}
-
-	tearDown()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := &HelloRepo{}
+			got, err := h.CreateUser(tt.args.name)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CreateUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("CreateUser() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
-func TestAccountUsecase_GetAccountByAuthID2(t *testing.T) {
-	setup()
-
-	accountID := 123
-	authID := "MANGY5OWI0OWI0ODC2OW"
-	createDummyAccount(accountID, authID)
-
-	account, err := accountUsecase.GetAccountByAuthID("MAFDSDSFSDDFFD")
-	if err == nil {
-		t.Error("Get account by auth id failed")
+func TestHelloRepo_FetchUserName(t *testing.T) {
+	type args struct {
+		userId string
 	}
-
-	if len(account) > 0 {
-		t.Error("Failed: account object should be empty")
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		// TODO: Add test cases.
 	}
-
-	tearDown()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := &HelloRepo{}
+			got, err := h.FetchUserName(tt.args.userId)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("FetchUserName() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("FetchUserName() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
-func TestAccountUsecase_GetAccountByAuthID3(t *testing.T) {
-	setup()
-
-	account, err := accountUsecase.GetAccountByAuthID("MAMTVINTHMMDEXZGFMND")
-	if err == nil {
-		t.Error(err.Error())
+func TestHelloRepo_GetApiStats(t *testing.T) {
+	tests := []struct {
+		name    string
+		want    *models.Stat
+		wantErr bool
+	}{
+		// TODO: Add test cases.
 	}
-
-	if len(account) != 0 {
-		t.Error("Failed: account object should not be empty")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := &HelloRepo{}
+			got, err := h.GetApiStats()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetApiStats() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetApiStats() got = %v, want %v", got, tt.want)
+			}
+		})
 	}
-
-	account, err = accountUsecase.GetAccountByAuthID("SARKNDGZYTQ5YTLKMTGW")
-	if err == nil {
-		t.Error(err.Error())
-	}
-
-	if len(account) != 0 {
-		t.Error("Failed: account object should not be empty")
-	}
-
-	tearDown()
 }
 
-func TestAccountUsecase_GetMainAccountByAuthID(t *testing.T) {
-	setup()
-
-	accountID := 123
-	authID := "MANGY5OWI0OWI0ODC2OW"
-	createDummyAccount(accountID, authID)
-
-	account, err := accountUsecase.GetMainAccountByAuthID(authID)
-	if err != nil {
-		t.Error(err.Error())
+func TestHelloRepo_updateApiStats(t *testing.T) {
+	type args struct {
+		didApiFail bool
 	}
-
-	if len(account) == 0 {
-		t.Error("Failed: account object should not be empty")
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
 	}
-
-	tearDown()
-}
-
-func TestAccountUsecase_GetMainAccountByAuthID2(t *testing.T) {
-	setup()
-
-	accountID := 123
-	authID := "MANGY5OWI0OWI0ODC2OW"
-	createDummyAccount(accountID, authID)
-
-	account, err := accountUsecase.GetMainAccountByAuthID("MAFDSDSFSDDFFD")
-	if err == nil {
-		t.Error("Get account by auth id failed")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := &HelloRepo{}
+			if err := h.updateApiStats(tt.args.didApiFail); (err != nil) != tt.wantErr {
+				t.Errorf("updateApiStats() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
 	}
-
-	if len(account) > 0 {
-		t.Error("Failed: account object should be empty")
-	}
-
-	tearDown()
-}
-
-func TestAccountUsecase_GetSubAccountByAuthID(t *testing.T) {
-	setup()
-
-	accountID := 123
-	authID := "MANGY5OWI0OWI0ODC2OW"
-	createDummyAccount(accountID, authID)
-	subAccountID := 321
-	subAuthID := "SAFDSFDSGDFGD7FD"
-	createDummySubAccount(subAccountID, subAuthID)
-
-	account, err := accountUsecase.GetSubAccountByAuthID(subAuthID)
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	if len(account) == 0 {
-		t.Error("Failed: account object should not be empty")
-	}
-
-	tearDown()
-}
-
-func TestAccountUsecase_GetSubAccountByAuthID2(t *testing.T) {
-	setup()
-
-	accountID := 123
-	authID := "MANGY5OWI0OWI0ODC2OW"
-	createDummyAccount(accountID, authID)
-	subAccountID := 321
-	subAuthID := "SAFDSFDSGDFGD7FD"
-	createDummySubAccount(subAccountID, subAuthID)
-
-	account, err := accountUsecase.GetSubAccountByAuthID("SAFDSDSFSDDFFDFD")
-	if err == nil {
-		t.Error("Get account by auth id failed")
-	}
-
-	if len(account) > 0 {
-		t.Error("Failed: account object should be empty")
-	}
-
-	tearDown()
-}
-
-func TestAccountUsecase_GetMainAccountByID(t *testing.T) {
-	setup()
-
-	accountID := 123
-	authID := "MANGY5OWI0OWI0ODC2OW"
-	createDummyAccount(accountID, authID)
-
-	account, err := accountUsecase.GetMainAccountByID(accountID)
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	if len(account) == 0 {
-		t.Error("Failed: account object should not be empty")
-	}
-
-	tearDown()
-}
-
-func TestAccountUsecase_GetMainAccountByID2(t *testing.T) {
-	setup()
-
-	accountID := 123
-	authID := "MANGY5OWI0OWI0ODC2OW"
-	createDummyAccount(accountID, authID)
-
-	account, err := accountUsecase.GetMainAccountByID(12345678)
-	if err == nil {
-		t.Error("Get account by auth id failed")
-	}
-
-	if len(account) > 0 {
-		t.Error("Failed: account object should be empty")
-	}
-
-	tearDown()
-}
-
-func TestAccountUsecase_GetSubAccountByID(t *testing.T) {
-	setup()
-
-	accountID := 123
-	authID := "MANGY5OWI0OWI0ODC2OW"
-	createDummyAccount(accountID, authID)
-	subAccountID := 321
-	subAuthID := "SAFDSFDSGDFGD7FD"
-	createDummySubAccount(subAccountID, subAuthID)
-
-	account, err := accountUsecase.GetSubAccountByID(subAccountID)
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	if len(account) == 0 {
-		t.Error("Failed: account object should not be empty")
-	}
-
-	tearDown()
-}
-
-func TestAccountUsecase_GetSubAccountByID2(t *testing.T) {
-	setup()
-
-	accountID := 123
-	authID := "MANGY5OWI0OWI0ODC2OW"
-	createDummyAccount(accountID, authID)
-	subAccountID := 321
-	subAuthID := "SAFDSFDSGDFGD7FD"
-	createDummySubAccount(subAccountID, subAuthID)
-
-	account, err := accountUsecase.GetSubAccountByID(9874321)
-	if err == nil {
-		t.Error("Get account by auth id failed")
-	}
-
-	if len(account) > 0 {
-		t.Error("Failed: account object should be empty")
-	}
-
-	tearDown()
-}
-
-func TestAccountUsecase_DeleteAccountByID(t *testing.T) {
-	setup()
-
-	accountID := 123
-	authID := "MANGY5OWI0OWI0ODC2OW"
-	createDummyAccount(accountID, authID)
-
-	err := accountUsecase.DeleteAccountByID(strconv.Itoa(accountID))
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	tearDown()
-}
-
-func TestAccountUsecase_DeleteAccountByID2(t *testing.T) {
-	setup()
-
-	accountID := 123
-	authID := "MANGY5OWI0OWI0ODC2OW"
-	createDummyAccount(accountID, authID)
-
-	err := accountUsecase.DeleteAccountByID("12345678")
-	if err == nil {
-		t.Error("Get account by auth id failed")
-	}
-
-	tearDown()
 }

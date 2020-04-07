@@ -100,8 +100,7 @@ https://gomonorepo.org/
 
 rest
   - swagger
-  - hystrix
-  - monitor: prometheus/statsd
+  - monitor: jaegar
 tests
   - bdd/table-driven: ginkgo
   - mock: testify

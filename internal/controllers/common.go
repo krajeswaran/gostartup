@@ -5,9 +5,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-var dbAdapter = adapters.DBAdapter{}
-var cacheAdapter = adapters.CacheAdapter{}
-
 // CommonController Contains common routes for service
 type CommonController struct{}
 
@@ -18,10 +15,10 @@ func (a *CommonController) Status(c echo.Context) error {
 
 //DeepStatus More meaningful health check. Checks all *must-have* dependencies before returning ok
 func (a *CommonController) DeepStatus(c echo.Context) error {
-	if err := dbAdapter.DeepStatus(); err != nil {
+	if err := adapters.DB.DeepStatus(); err != nil {
 		return c.JSON(NewApiResponse(InternalError, err.Error(), nil))
 	}
-	if err := cacheAdapter.DeepStatus(); err != nil {
+	if err := adapters.Cache.DeepStatus(); err != nil {
 		return c.JSON(NewApiResponse(InternalError, err.Error(), nil))
 	}
 	return c.JSON(NewApiResponse(Okay, "", nil))
